@@ -2,6 +2,19 @@
 
 #include "utils.h"
 
+static constexpr const uint32_t WINDOW_HEIGHT = 720;
+static constexpr const uint32_t WINDOW_WIDTH = 1280;
+
+struct GameConfigurations {
+    uint32_t gridHeight_cells = 4;
+    uint32_t gridWidth_cells = 4;
+    uint32_t gridHeight_px = 0.8 * WINDOW_HEIGHT;
+    uint32_t gridWidth_px = 0.8 * WINDOW_WIDTH;
+    uint32_t gridOriginX_px = (WINDOW_WIDTH / 2) - (gridWidth_px / 2);
+    uint32_t gridOriginY_px = (WINDOW_HEIGHT / 2) - (gridHeight_px / 2);
+    uint32_t cellWidth_px = gridWidth_px / gridWidth_cells;
+    uint32_t cellHeight_px = gridHeight_px / gridHeight_cells;
+} config;
 
 enum class PlayerMove
 {
@@ -20,15 +33,20 @@ struct GridPosition
         assert(initialCol >= 0);
     }
 
-    // struct GridPositionHash
-    // {
-    //     size_t operator()(const GridPosition& obj)
-    //     {
-    //         // Basic hash to allow for use in unordered set
-    //         std::string toHash = std::to_string(obj.row) + "_" + std::to_string(obj.col);
-    //         return std::hash<std::string>{}(toHash);
-    //     }
-    // };
+    bool operator==(const GridPosition& rhs)
+    {
+        return (row == rhs.row) && (col == rhs.col);
+    }
+
+    struct GridPositionHash
+    {
+        size_t operator()(const GridPosition& obj)
+        {
+            // Basic hash to allow for use in unordered set
+            std::string toHash = std::to_string(obj.row) + "_" + std::to_string(obj.col);
+            return std::hash<std::string>{}(toHash);
+        }
+    };
 
     int8_t row;
     int8_t col;
@@ -83,14 +101,31 @@ public:
 
     bool drainCell(uint8_t row, uint8_t col, float& ret);
     void fillCell(float shrinkRate); // Grid's responsibility to choose a cell that has not been filled yet
-    void update(float dt);
+    uint8_t update(float dt);
     
     virtual void draw(SDL_Renderer* renderer) override; // Grid's responsibility to draw everything
 
 private:
-    std::vector<GridPosition> m_availableCells; // TODO: Confirm what the right data structure is for this?
-        // I want fast erasing and insertion + indexing by number?? Becuase I want to select randomly easily from it
+    std::vector<GridPosition> m_availableCells;
     std::vector<std::vector<Cell>> m_grid;
+    std::vector<std::vector<SDL_Rect>> m_drawGrid;
     Drainer& m_drainer;
+
+    /* TODO: I will add this feature once the game logic is done. Strikes will still appear in a bar at the top, just not directly on the cells for right now
+     * Cells are added to the strikeCells when:
+     *     - A player clicks an empty cells
+     *     - A player lets a cell drain completely without draining themselves
+     * 
+     * The missed cell will be added to the strike cells in order for draw() to know where to draw red X's
+     * In order for the X to not blip in and out immediately, we will draw it several draws in a row.
+     * draw() will increment the value associated with the strike cell to a certain threshold e.g. 10 
+     * The cell then becomes available in m_availableCells.
+     * 
+     * I don't believe there will be too much worry in running out of available cells (all cells full or containing X) 
+     * because I think the X will be there very shortly and compared to the slower spawn rate of full cells, we will be alright,
+     * but it is something to keep in mind
+     */
+    std::unordered_map<GridPosition, int, GridPosition::GridPositionHash> m_strikeCells;
+
 };
 
