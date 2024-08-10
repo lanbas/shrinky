@@ -1,12 +1,14 @@
 # shrinky
 shrinky game
 
-## Build
+## install
 ```bash
+git clone https://github.com/lanbas/shrinky.git
 cd shrinky
 make
 ```
-## Play
+
+## play
 ```bash
 ./shrinky
 ```
