@@ -22,4 +22,4 @@ make
 ./shrinky
 ```
 
-Interact with the cell before it drains completely. Fill frequency and drain speed increase over time. Interactions with a cell that is unfilled results in a "strike", and so does the act of letting any cell drain completely. Three "strikes" and the game is over. 
+Cells in the grid fill intermittently. Move to select a cell and interact with the cell before it drains completely. Fill frequency and drain speed increase over time. Interactions with a cell that is unfilled results in a "strike", and so does the act of letting any cell drain completely. Three "strikes" and the game is over. 
