@@ -135,7 +135,7 @@ private:
      * because I think the X will be there very shortly and compared to the slower spawn rate of full cells, we will be alright,
      * but it is something to keep in mind
      */
-    std::unordered_map<GridPosition, int, GridPosition::GridPositionHash> m_strikeCells;
+    // std::unordered_map<GridPosition, int, GridPosition::GridPositionHash> m_strikeCells;
 
 };
 
