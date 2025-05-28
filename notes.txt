@@ -1,1 +1,0 @@
-position of drainer should be updated before space is processed I think
