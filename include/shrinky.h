@@ -5,15 +5,27 @@
 static constexpr const uint32_t WINDOW_HEIGHT = 720;
 static constexpr const uint32_t WINDOW_WIDTH = 1280;
 
-struct GameConfigurations {
+static struct GameConfigurations {
+    // Grid dimensions configurations
     uint32_t gridHeight_cells = 4;
     uint32_t gridWidth_cells = 4;
     uint32_t gridHeight_px = 0.8 * WINDOW_HEIGHT;
-    uint32_t gridWidth_px = 0.8 * WINDOW_WIDTH;
+    uint32_t gridWidth_px = gridHeight_px;
     uint32_t gridOriginX_px = (WINDOW_WIDTH / 2) - (gridWidth_px / 2);
     uint32_t gridOriginY_px = (WINDOW_HEIGHT / 2) - (gridHeight_px / 2);
     uint32_t cellWidth_px = gridWidth_px / gridWidth_cells;
     uint32_t cellHeight_px = gridHeight_px / gridHeight_cells;
+
+    float fillInterval_ms = 1000;
+    float fillIntervalDelta_ms = 5;
+    float fillIntervalDeltaPeriod_ms = 1000; // Every second, fill interval goes down
+    float fillIntervalMin_ms = 500;
+
+    float drainRate = 0.33;
+    float drainRateDelta = 0.01;
+    float drainRateDeltaPeriod_ms = 1000;
+    float drainRateMax = 1.0;
+    float drainRateVariation = 0.1;
 } config;
 
 enum class PlayerMove
@@ -71,7 +83,7 @@ private:
 /*
  * Class for a single square on the grid
  */
-class Cell : public IDrawable
+class Cell
 {
 public:
     bool isEmpty();
@@ -86,8 +98,6 @@ public:
     void fill(float shrinkRate);
     void drain();
     void update(float dt); // Shrink based on shrinkRate
-    
-    virtual void draw(SDL_Renderer* renderer) override;
 
 private:
     float m_shrinkRate{ 0.0f };

@@ -1,5 +1,5 @@
 #include "shrinky.h"
-
+#include "SDL2/SDL2_gfxPrimitives.h"
 
 ////////////////////////////////
 // Drainer
@@ -19,12 +19,16 @@ void Drainer::move(PlayerMove move)
     {
         case PlayerMove::UP:
             m_position.row = std::max(0, m_position.row - 1); // Confirm that this does not roll over to max
+            break;
         case PlayerMove::DOWN:
-            m_position.row = std::min((int)m_gridHeight, m_position.row + 1);
+            m_position.row = std::min((int)m_gridHeight - 1, m_position.row + 1);
+            break;
         case PlayerMove::LEFT:
             m_position.col = std::max(0, m_position.col - 1);
+            break;
         case PlayerMove::RIGHT:
-            m_position.col = std::min((int)m_gridWidth, m_position.col + 1);
+            m_position.col = std::min((int)m_gridWidth - 1, m_position.col + 1);
+            break;
     }
 }
 
@@ -35,7 +39,7 @@ GridPosition Drainer::position()
 
 
 ////////////////////////////////
-// Cell : IDrawable
+// Cellwaaw
 ////////////////////////////////
 bool Cell::isEmpty()
 {
@@ -62,7 +66,7 @@ void Cell::drain()
 
 void Cell::update(float dt)
 {
-    m_proportionFilled = std::max(0.0f, m_proportionFilled - (dt * m_shrinkRate));
+    m_proportionFilled = std::max(0.0f, m_proportionFilled - ((dt / 1000.0f) * m_shrinkRate));
 }
 
 ////////////////////////////////
@@ -102,7 +106,7 @@ bool Grid::drainCell(uint8_t row, uint8_t col, float& ret)
     }
    
     // else
-    ret = m_grid[row][col].howFull(); // For scoring
+    ret = std::pow(10 * m_grid[row][col].howFull(), 1.5); // For scoring
     m_grid[row][col].drain();
     m_availableCells.push_back(GridPosition(row, col));
     return true;
@@ -154,19 +158,14 @@ void Grid::draw(SDL_Renderer* renderer)
     // Current drainer position cell should be outlined in color
 
     // For each cell
+    int lineThickness = 8;
     uint8_t i = 0;
     for (uint32_t y = 0; y < config.gridHeight_px; y += config.cellHeight_px)
     {
         uint8_t j = 0;
         for (uint32_t x = 0; x < config.gridWidth_px; x += config.cellWidth_px)
         {
-            // Set color if the drainer is hovering over this cell
-            if (GridPosition(i, j) == m_drainer.position())
-                SDL_SetRenderDrawColor(renderer, 0, 0, 255, 200); // Blue
-            else
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White
-
-            // Draw border of cell
+            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White
             SDL_RenderDrawRect(renderer, &m_drawGrid[i][j]);
 
             // Draw filled inside of cell if not empty
@@ -176,15 +175,31 @@ void Grid::draw(SDL_Renderer* renderer)
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White
 
                 // Draw filled rectangle based on how much of cell is full 
-                fillRect.w = config.cellWidth_px * m_grid[i][j].howFull();
-                fillRect.h = 
+                float fullness = m_grid[i][j].howFull();
+                fillRect.w = config.cellWidth_px * fullness;
+                fillRect.h = config.cellHeight_px * fullness;
+
+                // Shift filled rectangle half of the total missing proportion 
+                float shiftFactor = (1 - fullness) / 2;
+                fillRect.x = m_drawGrid[i][j].x + (shiftFactor * config.cellWidth_px);
+                fillRect.y = m_drawGrid[i][j].y + (shiftFactor * config.cellHeight_px);
+
+                SDL_RenderFillRect(renderer, &fillRect);
             }
-
-
 
             j++;
         }
         i++;
     }
+
+    // Draw larger blue outline for current drainer position
+    GridPosition drainerPos = m_drainer.position();
+    SDL_Rect r = m_drawGrid[drainerPos.row][drainerPos.col];
+
+    // SDL_gfx function to be able to draw thicker lines 
+    thickLineRGBA(renderer, r.x, r.y, r.x + r.w, r.y, lineThickness, 51, 153, 255, 255); // Top of square
+    thickLineRGBA(renderer, r.x + r.w, r.y, r.x + r.w, r.y + r.h, lineThickness, 51, 153, 255, 255); // Right of square
+    thickLineRGBA(renderer, r.x, r.y + r.h, r.x + r.w, r.y + r.h, lineThickness, 51, 153, 255, 255); // Bottom of square
+    thickLineRGBA(renderer, r.x, r.y, r.x, r.y + r.h, lineThickness, 51, 153, 255, 255); // Left of square 
 
 }
